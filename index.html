@@ -1,56 +1,311 @@
+```html
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <title>Python in Browser</title>
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>S.P.I.N.E.</title>
+
     <script src="https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js"></script>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #1e1e2f;
+            color: white;
+            text-align: center;
+        }
+
+        header {
+            padding: 25px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 36px;
+        }
+
+        .subtitle {
+            color: #aaaaaa;
+            margin-top: 8px;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1000px;
+            margin: 30px auto;
+        }
+
+        .status-box {
+            background: #11111d;
+            border-radius: 15px;
+            padding: 25px;
+            min-height: 200px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        }
+
+        #status {
+            font-size: 20px;
+            color: #f39c12;
+            margin-bottom: 20px;
+        }
+
+        #output {
+            white-space: pre-wrap;
+            text-align: left;
+            background: #080810;
+            padding: 20px;
+            border-radius: 10px;
+            min-height: 100px;
+            overflow-x: auto;
+        }
+
+        button {
+            background: #2ecc71;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        button:hover {
+            opacity: 0.85;
+        }
+
+        .warning {
+            margin-top: 20px;
+            color: #e74c3c;
+            font-size: 14px;
+        }
+
+    </style>
+
 </head>
 
 <body>
-    <h1>Python via Pyodide</h1>
-    <pre id="output">Loading Python environment...</pre>
 
-    <script>
-        async function main() {
-            try {
-                // 1. Initialize Pyodide
-                let pyodide = await loadPyodide();
+    <header>
 
-                document.getElementById("output").textContent =
-                    "Installing OpenCV...";
+        <h1>S.P.I.N.E.</h1>
 
-                // 2. Install OpenCV
-                await pyodide.loadPackage("opencv-python");
+        <div class="subtitle">
+            Sarcastic Posture Inspection & Nagging Engine
+        </div>
 
-                document.getElementById("output").textContent =
-                    "Loading index.py...";
+    </header>
 
-                // 3. Fetch Python file
-                let response = await fetch("index.py");
 
-                if (!response.ok) {
-                    throw new Error(
-                        `Failed to load index.py: ${response.statusText}`
-                    );
-                }
+    <div class="container">
 
-                let pythonCode = await response.text();
+        <div class="status-box">
 
-                // 4. Run Python
-                let result = await pyodide.runPythonAsync(pythonCode);
+            <div id="status">
+                Loading Python environment...
+            </div>
 
-                document.getElementById("output").textContent =
-                    result !== undefined
-                        ? result
-                        : "Script executed successfully.";
+            <pre id="output">
+Please wait...
+            </pre>
 
-            } catch (error) {
-                document.getElementById("output").textContent =
-                    "Error: " + error;
-            }
+            <button onclick="runPython()">
+                Run S.P.I.N.E.
+            </button>
+
+            <div class="warning">
+                Note: Pyodide runs Python inside the browser.
+                Desktop Python features such as Tkinter,
+                Pygame and cv2.VideoCapture are not supported.
+            </div>
+
+        </div>
+
+    </div>
+
+
+<script>
+
+let pyodide = null;
+
+
+/* =====================================================
+   LOAD PYTHON
+===================================================== */
+
+async function loadPython() {
+
+    const status =
+        document.getElementById("status");
+
+    const output =
+        document.getElementById("output");
+
+    try {
+
+        status.innerText =
+            "Loading Python environment...";
+
+        pyodide = await loadPyodide();
+
+
+        /* ---------------------------------------------
+           Install required Pyodide packages
+        --------------------------------------------- */
+
+        status.innerText =
+            "Loading Python packages...";
+
+
+        await pyodide.loadPackage([
+            "numpy",
+            "pillow"
+        ]);
+
+
+        status.innerText =
+            "Python environment ready";
+
+
+        output.innerText =
+            "Python loaded successfully.\n\n" +
+            "Click 'Run S.P.I.N.E.' to execute index.py.";
+
+
+    } catch (error) {
+
+        status.innerText =
+            "Python loading failed";
+
+        output.innerText =
+            "Error:\n" + error;
+
+        console.error(error);
+
+    }
+
+}
+
+
+/* =====================================================
+   RUN INDEX.PY
+===================================================== */
+
+async function runPython() {
+
+    const status =
+        document.getElementById("status");
+
+    const output =
+        document.getElementById("output");
+
+
+    if (!pyodide) {
+
+        output.innerText =
+            "Python environment is still loading.";
+
+        return;
+
+    }
+
+
+    try {
+
+        status.innerText =
+            "Loading index.py...";
+
+
+        /* ---------------------------------------------
+           Get Python file from same Vercel directory
+        --------------------------------------------- */
+
+        const response =
+            await fetch("index.py");
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                "Could not load index.py. " +
+                "Make sure index.py is uploaded to Vercel."
+            );
+
         }
 
-        main();
-    </script>
+
+        const pythonCode =
+            await response.text();
+
+
+        status.innerText =
+            "Running Python...";
+
+
+        /* ---------------------------------------------
+           Execute Python
+        --------------------------------------------- */
+
+        const result =
+            await pyodide.runPythonAsync(
+                pythonCode
+            );
+
+
+        if (result !== undefined) {
+
+            output.innerText =
+                String(result);
+
+        } else {
+
+            output.innerText =
+                "Python script executed successfully.";
+
+        }
+
+
+        status.innerText =
+            "S.P.I.N.E. finished";
+
+
+    } catch (error) {
+
+        status.innerText =
+            "Python execution failed";
+
+
+        output.innerText =
+            "Error:\n\n" + error;
+
+
+        console.error(error);
+
+    }
+
+}
+
+
+/* =====================================================
+   START
+===================================================== */
+
+loadPython();
+
+</script>
+
 </body>
+
 </html>
+```
