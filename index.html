@@ -5,6 +5,7 @@
     <title>Python in Browser</title>
     <script src="https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js"></script>
 </head>
+
 <body>
     <h1>Python via Pyodide</h1>
     <pre id="output">Loading Python environment...</pre>
@@ -15,22 +16,40 @@
                 // 1. Initialize Pyodide
                 let pyodide = await loadPyodide();
 
-                // 2. Fetch the content of index.py from the server
-                let response = await fetch('index.py');
+                document.getElementById("output").textContent =
+                    "Installing OpenCV...";
+
+                // 2. Install OpenCV
+                await pyodide.loadPackage("opencv-python");
+
+                document.getElementById("output").textContent =
+                    "Loading index.py...";
+
+                // 3. Fetch Python file
+                let response = await fetch("index.py");
+
                 if (!response.ok) {
-                    throw new Error(`Failed to load index.py: ${response.statusText}`);
+                    throw new Error(
+                        `Failed to load index.py: ${response.statusText}`
+                    );
                 }
+
                 let pythonCode = await response.text();
 
-                // 3. Execute the Python code and display the result
+                // 4. Run Python
                 let result = await pyodide.runPythonAsync(pythonCode);
-                
-                // Set output (defaults to last evaluated expression in index.py)
-                document.getElementById("output").textContent = result !== undefined ? result : "Script executed successfully.";
+
+                document.getElementById("output").textContent =
+                    result !== undefined
+                        ? result
+                        : "Script executed successfully.";
+
             } catch (error) {
-                document.getElementById("output").textContent = "Error: " + error.message;
+                document.getElementById("output").textContent =
+                    "Error: " + error;
             }
         }
+
         main();
     </script>
 </body>
